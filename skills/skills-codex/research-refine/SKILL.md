@@ -5,6 +5,8 @@ description: "Turn a vague research direction into a problem-anchored, elegant, 
 
 # Research Refine: Problem-Anchored, Elegant, Frontier-Aware Plan Refinement
 
+本 fork 的方法论见 [`research-methodology-cn.md`](../shared-references/research-methodology-cn.md)。精炼时保留来源类型和竞争解释，优先形成最小充分机制；每个核心假设必须在后续实验计划中绑定直接验证，不用评分阈值单独宣布科学成立。
+
 Refine and concretize: **$ARGUMENTS**
 
 ## Overview

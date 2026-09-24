@@ -7,6 +7,8 @@ description: "Generate and rank research ideas given a broad direction. Use when
 
 Generate publishable research ideas for: $ARGUMENTS
 
+本 fork 的跨阶段规则见 [`research-methodology-cn.md`](../shared-references/research-methodology-cn.md)。本 Skill 默认只生成和比较候选，不启动 pilot、部署或修改科研源码；实验必须有当前任务的明确授权。
+
 ## Overview
 
 Given a broad research direction from the user, systematically generate, validate, and rank concrete research ideas. Standalone, Phase 1's landscape survey is **inline** (WebSearch — it does not invoke `/research-lit`); Phases 4-5 invoke `/novelty-check`, `/run-experiment`, and `/monitor-experiment` for validation and pilots. For the full sub-skill pipeline (`/research-lit` → idea generation → `/novelty-check` → `/research-review`), run `/idea-discovery` (Workflow 1), which orchestrates this skill.
@@ -16,7 +18,7 @@ Given a broad research direction from the user, systematically generate, validat
 - **PILOT_MAX_HOURS = 2** — Skip any pilot estimated to take > 2 hours per GPU. Flag as "needs manual pilot".
 - **PILOT_TIMEOUT_HOURS = 3** — Hard timeout: kill pilots exceeding 3 hours. Collect partial results if available.
 - **MAX_PILOT_IDEAS = 3** — Pilot at most 3 ideas in parallel. Additional ideas are validated on paper only.
-- **MAX_TOTAL_GPU_HOURS = 8** — Total GPU budget for all pilots combined.
+- **MAX_TOTAL_GPU_HOURS = 8** — Total GPU budget for all pilots combined after explicit approval; default pilot budget is 0.
 - **REVIEWER_MODEL = `gpt-6-astra`** — Model used via a secondary Codex agent for brainstorming and review. Must be an OpenAI model (e.g., `gpt-6-astra`, `o3`, `gpt-4o`).
 - **REVIEWER_BACKEND = `codex`** — Default: Codex xhigh reviewer through `spawn_agent` / `send_input`. Use `--reviewer: oracle-pro` only when explicitly requested; if Oracle is unavailable, warn and fall back to Codex xhigh.
 - **OUTPUT_DIR = `idea-stage/`** — All idea-stage outputs go here. Create the directory if it doesn't exist.
@@ -153,6 +155,8 @@ Map the research area to understand what exists and where the gaps are.
 
 ### Phase 2: Idea Generation (brainstorm with external LLM)
 
+Before concrete methods, produce an Insight card for each promising direction: problem, evidence type (paper-explicit / cross-paper synthesis / derived here), new understanding, strongest alternative explanation, discriminating prediction, minimum test, nearest work, and risk. Generate across 4--6 relevant lenses (author limitation, failure mechanism, assumption breaking, contradiction, information gap, objective mismatch, granularity/state/time, structural transfer, simplification/inversion). Do not use the initial weights as a hard filter.
+
 Use a secondary Codex agent for divergent thinking:
 
 ```
@@ -276,7 +280,9 @@ For each surviving idea, run a deeper evaluation:
 
 3. **Combine rankings**: Merge your assessment with GPT-6-Astra's ranking. Select top 2-3 ideas for pilot experiments.
 
-### Phase 5: Parallel Pilot Experiments (for top 2-3 ideas)
+### Phase 5: Parallel Pilot Experiments (only after explicit approval)
+
+Skip this phase unless the user explicitly approves the selected ideas, data construction, compute budget, backend, and run stages in the current task. A request to find or refine ideas alone is not approval. If skipped, write the smallest discriminating experiment plan and mark candidates as awaiting validation.
 
 Before committing to a full research effort, run cheap pilot experiments to get empirical signal. This is the key differentiator from paper-only validation.
 

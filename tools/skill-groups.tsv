@@ -49,6 +49,8 @@ skill	novelty-check	ideation	-	idea 查新(有没有人做过)
 skill	research-refine	ideation	-	粗糙方向打磨成聚焦提案
 skill	research-refine-pipeline	ideation	research-refine,experiment-plan	refine+实验计划一条龙
 skill	research-wiki	ideation	-	跨生命周期研究知识库
+skill	notion-research	ideation	-	科研 Notion 库读取、去重、版本与写回
+skill	research-implementation-plan	experiments	-	科研方案到真实仓库的只读实现映射
 skill	wiki-enrich	ideation	research-wiki	补全 wiki 论文页 TODO
 skill	research-pipeline	ideation	idea-discovery,experiment-bridge,auto-review-loop,render-html	端到端总 pipeline:找 idea→实验→论文
 skill	research-review	review-loop	-	研究方案/结果批判性评审

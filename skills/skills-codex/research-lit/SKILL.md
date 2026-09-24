@@ -5,6 +5,8 @@ description: "Search and analyze research papers, find related work, summarize k
 
 # Research Literature Review
 
+本 fork 的跨阶段证据规则见 [`research-methodology-cn.md`](../shared-references/research-methodology-cn.md)。两轮检索都要形成问题、已有方法、明确局限/现象、假设与机制线索、可验证机会五集合；关键判断写明论文明确内容、跨论文归纳或本文推导。
+
 Research topic: $ARGUMENTS
 
 ## Constants

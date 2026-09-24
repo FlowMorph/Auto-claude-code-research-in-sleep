@@ -7,6 +7,8 @@ description: "Workflow 1.5: Bridge between idea discovery and auto review. Reads
 
 Implement and deploy experiments from plan: **$ARGUMENTS**
 
+本 fork 的桥接规则见 [`research-implementation-plan`](../research-implementation-plan/SKILL.md)。开始编码前必须先完成只读仓库映射和 `IMPLEMENTATION_PLAN.md`；计划、代码、数据和指标不一致时暂停并报告。
+
 ## Overview
 
 This skill bridges Workflow 1 (idea discovery + method refinement) and Workflow 2 (auto review loop). It takes the experiment plan and turns it into running experiments with initial results.
@@ -20,7 +22,7 @@ refine-logs/FINAL_PROPOSAL.md
 
 ## Constants
 
-- **AUTO_DEPLOY = true** — Automatically deploy experiments after implementation. Set `false` to review code before deploying.
+- **AUTO_DEPLOY = false** — Deployment requires explicit approval of the implementation plan, stages, backend, data, and budget in the current task.
 - **CODE_REVIEW = true** — Secondary Codex reviewer with xhigh reasoning reviews experiment code before deployment. Catches logic bugs before wasting GPU hours. Set `false` to skip.
 - **SANITY_FIRST = true** — Run the sanity-stage experiment first (smallest, fastest) before launching the rest. Catches setup bugs early.
 - **MAX_PARALLEL_RUNS = 4** — Maximum number of experiments to deploy in parallel (limited by available GPUs).
@@ -78,6 +80,8 @@ using the selected idea + claims from the experiment plan — downstream
 `/result-to-claim` and `/ablation-planner` read it as the claims source.
 
 ### Phase 2: Implement Experiment Code
+
+Implementation is allowed only after the implementation plan has been reviewed and the user has approved the listed stages. A plan-only request stops after writing the mapping and does not modify research code.
 
 **If `BASE_REPO` is set** — clone the repo first:
 

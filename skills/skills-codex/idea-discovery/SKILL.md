@@ -5,6 +5,8 @@ description: "Workflow 1: Full idea discovery pipeline to go from a broad resear
 
 # Workflow 1: Idea Discovery Pipeline
 
+本 fork 的科研规则见 [`research-methodology-cn.md`](../shared-references/research-methodology-cn.md)，Notion 读取与写回见 [`notion-research`](../notion-research/SKILL.md)。
+
 Orchestrate a complete idea discovery workflow for: **$ARGUMENTS**
 
 ## Overview
@@ -24,7 +26,7 @@ Each phase builds on the previous one's output. The final deliverables are a val
 - **PILOT_TIMEOUT_HOURS = 3** — Hard timeout: kill any running pilot that exceeds 3 hours. Collect partial results if available.
 - **MAX_PILOT_IDEAS = 3** — Run pilots for at most 3 top ideas in parallel. Additional ideas are validated on paper only.
 - **MAX_TOTAL_GPU_HOURS = 8** — Total GPU budget across all pilots. If exceeded, skip remaining pilots and note in report.
-- **AUTO_PROCEED = true** — When `true`, checkpoints are informational: report the selected option and continue in the same turn. Set to `false` to ask for explicit user confirmation and end the turn at each selection checkpoint.
+- **AUTO_PROCEED = false** — Direction selection, pilot approval, Notion writes, and implementation start require explicit user authorization. Reporting a recommendation may continue; execution does not.
 - **REVIEWER_MODEL = `gpt-6-astra`** — Model used via a secondary Codex agent. Must be an OpenAI model (e.g., `gpt-6-astra`, `o3`, `gpt-4o`). Passed to sub-skills.
 - **ARXIV_DOWNLOAD = false** — When `true`, `/research-lit` downloads the top relevant arXiv PDFs during Phase 1. When `false` (default), only fetches metadata. Passed through to `/research-lit`.
 - **COMPACT = false** — When `true`, generate compact summary files for short-context sessions and downstream skills. Writes `idea-stage/IDEA_CANDIDATES.md`.

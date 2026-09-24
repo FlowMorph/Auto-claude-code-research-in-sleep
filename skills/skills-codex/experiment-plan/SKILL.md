@@ -7,6 +7,8 @@ description: "Turn a refined research proposal or method idea into a detailed, c
 
 Refine and concretize: **$ARGUMENTS**
 
+本 fork 的实验规划必须读取 [`research-methodology-cn.md`](../shared-references/research-methodology-cn.md)。每个核心假设 H 都要绑定直接验证实验；工程前置检查必须显式标记为前置条件。计划生成本身不授权运行实验。
+
 ## Overview
 
 Use this skill after the method is stable enough that the next question becomes: **what exact experiments should we run, in what order, to defend the paper?** If the user wants the full chain in one request, prefer `/research-refine-pipeline`.
@@ -48,6 +50,8 @@ Extract:
 If these files do not exist, derive the same information from the user's prompt.
 
 ### Phase 1: Freeze the Paper Claims
+
+For every core hypothesis, record the linked question, method module, direct experiment block, supporting result, weakening result, and refuting result. Keep implementation checks separate from evidence for the hypothesis.
 
 Before proposing experiments, write down the claims that must be defended.
 
@@ -246,4 +250,3 @@ Tracker file: refine-logs/EXPERIMENT_TRACKER.md
 /run-experiment    -> execute the runs
 /auto-review-loop  -> react to results and iterate on the paper
 ```
-
