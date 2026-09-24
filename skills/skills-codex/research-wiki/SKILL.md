@@ -28,7 +28,7 @@ Inspired by [Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6
 
 ### Pilot 与失败条件字段
 
-Idea 和 Experiment 节点应在可用时记录 `pilot_verdict`、`pilot_status`、`pilot_diagnostics`、`failure_attribution`、`target_hq`、`isolated_mbe`、`budget` 和 `next_action`。`strong_positive`、`weak_positive`、`clear_negative`、`inconclusive` 是经验状态；`clear_negative` 只形成带模型/数据/预算/实现条件的 failed-ideas banlist，不构成无条件科学否决。Pilot 证据与 Formal claim 分开，Formal claim 由 `/result-to-claim` 或 `/proof-checker` 的原有流程产生。
+Idea 和 Experiment 节点保存少量稳定字段：`pilot_verdict`、`target_hypothesis`、`primary_signal`、`failure_attribution`、`next_action`、`provenance`，以及不固定结构的 `diagnostics` 摘要。`strong_positive`、`weak_positive`、`clear_negative`、`inconclusive`、`pilot_skipped`、`needs_manual_pilot` 是经验状态；失败 Idea 按 ARIS 原生规则进入 failed-ideas banlist，失败背景仍写入节点。Pilot 证据与 Formal claim 分开，Formal claim 由 `/result-to-claim` 或 `/proof-checker` 的原有流程产生。
 
 ### Typed Relationships (`graph/edges.jsonl`)
 
@@ -329,7 +329,7 @@ specific result set differs.
 ```
 if research-wiki/query_pack.md exists (and < 7 days old):
     prepend query_pack to landscape context
-    treat failed ideas as conditional banlist with model/data/budget/implementation conditions
+    treat failed ideas as the ARIS failed-ideas banlist
     treat top gaps as search seeds
     still run fresh literature search for last 3-6 months
 ```
@@ -347,6 +347,19 @@ for idea in all_generated_ideas (recommended + killed):
     # experiment verdict is set later by /result-to-claim, never guessed at ideation.
 log "idea-creator wrote N ideas to wiki"
 ```
+
+After a Pilot updates an existing Idea, call the same helper with `--update-on-exist` and only the Pilot fields:
+
+```
+python3 "$WIKI_SCRIPT" upsert_idea research-wiki/ --slug <stable-id> --title <title> \
+  --pilot-verdict <strong_positive|weak_positive|clear_negative|inconclusive|pilot_skipped|needs_manual_pilot> \
+  --target-hypothesis "<what this Pilot tested>" --primary-signal "<main result>" \
+  --diagnostics "<short flexible diagnostic summary>" \
+  --failure-attribution <implementation|signal_not_created|signal_not_used|signal_not_transmitted|underpowered|hypothesis_weakened|unknown> \
+  --next-action <scale|diagnose|revise|archive> --provenance <run directory> --update-on-exist
+```
+
+The update path preserves the existing thesis, connections and formal outcome. `result-to-claim` remains the owner of formal claim relationships.
 
 ### Hook 3: After `/result-to-claim` verdict
 

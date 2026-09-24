@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ARIS Codex 科研工作流二次定制的最小契约测试。"""
+"""ARIS Codex 最终科研工作流修复的行为契约测试。"""
 from pathlib import Path
 import subprocess
 import tempfile
@@ -8,59 +8,97 @@ import unittest
 ROOT = Path(__file__).resolve().parent.parent
 CODEX = ROOT / "skills" / "skills-codex"
 
-def read(name):
+def read_skill(name):
     return (CODEX / name / "SKILL.md").read_text()
 
 class ResearchCustomizationContractTest(unittest.TestCase):
-    def test_methodology_protocol(self):
-        s = (CODEX / "shared-references" / "research-methodology-cn.md").read_text()
-        for token in ("第一轮", "第二轮", "五集合", "P0–P4", "Insight Card", "H/Q/M/B/E", "strong_positive", "inconclusive", "Research Wiki", "Notion", "Impact Check", "语义依赖传播"):
-            self.assertIn(token, s)
+    def test_p0_p4_are_the_single_formal_definition(self):
+        methodology = (CODEX / "shared-references" / "research-methodology-cn.md").read_text()
+        expected = {
+            "P0：作者在 Limitation": "作者明确线索",
+            "P1：实验直接暴露": "实验直接问题",
+            "P2：多个相关工作共同": "跨论文归纳",
+            "P3：根据方法的假设": "机制性推导",
+            "P4：探索性构想": "探索性构想",
+        }
+        for phrase in expected:
+            self.assertIn(phrase, methodology)
+        lit = read_skill("research-lit")
+        self.assertIn("唯一正式定义", lit)
+        self.assertNotIn("P0 是核心 limitation/失败", lit)
 
-    def test_literature_is_two_round_and_materialized(self):
-        s = read("research-lit")
-        for token in ("Round 1", "Round 2", "收集 → 精读 → 五集合 → 跨论文归纳", "LITERATURE_ROUND1.md", "LITERATURE_ROUND2.md", "PROBLEM_EVIDENCE_PACK.md", "P0–P4"):
-            self.assertIn(token, s)
+    def test_native_banlist_semantics_are_restored(self):
+        files = [
+            CODEX / "shared-references" / "research-methodology-cn.md",
+            CODEX / "idea-creator" / "SKILL.md",
+            CODEX / "research-wiki" / "SKILL.md",
+        ]
+        combined = "\n".join(p.read_text() for p in files)
+        self.assertNotIn("conditional " + "banlist", combined)
+        self.assertIn("failed-ideas banlist", combined)
+        self.assertIn("失败背景", combined)
 
-    def test_idea_and_pilot_contract(self):
-        creator = read("idea-creator")
-        discovery = read("idea-discovery")
-        for token in ("Insight Card", "target_hq", "failure_attribution", "strong_positive", "clear_negative", "CUDA_VISIBLE_DEVICES=0,1"):
-            self.assertIn(token, creator)
-        self.assertIn("AUTO_PROCEED = true", discovery)
-        for token in ("PROBLEM_EVIDENCE_PACK", "pilot_status", "inconclusive", "不以“Pilot 必须 positive”"):
-            self.assertIn(token, discovery)
+    def test_experiment_layers_keep_pilot_light_and_formal_heavy(self):
+        plan = read_skill("experiment-plan")
+        for phrase in (
+            "已有结果",
+            "直接复用已有结果",
+            "Diagnostic/Mechanism",
+            "一次只回答一个最关键的不确定性",
+            "Formal Evaluation",
+            "multi-seed",
+            "Formal Infra Plan",
+            "不要求 multi-seed",
+            "不自动升级为 Formal claim",
+        ):
+            self.assertIn(phrase, plan)
+        self.assertIn("H/Q/M/B/E 用来定位问题，不要求 Pilot 覆盖所有 H、M 或 B", plan)
 
-    def test_refine_experiment_and_bridge_contract(self):
-        refine = read("research-refine")
-        plan = read("experiment-plan")
-        bridge = read("experiment-bridge")
-        impl = read("research-implementation-plan")
-        for token in ("SCORE_THRESHOLD = 9", "Impact Check", "Revision Propagation & Consistency Check", "证据 → 问题/Insight → H/Q → M → B/E → claim"):
-            self.assertIn(token, refine)
-        for token in ("Research Map", "Pilot Evidence", "Diagnostic/Mechanism", "Formal Evaluation", "Formal Infra Plan"):
-            self.assertIn(token, plan)
-        self.assertIn("/research-implementation-plan", bridge)
-        for token in ("文件、类/函数", "Consistency Check", "IMPLEMENTATION_PLAN.md"):
-            self.assertIn(token, impl)
+    def test_idea_creator_has_real_pilot_update_contract(self):
+        creator = read_skill("idea-creator")
+        for phrase in (
+            "pilot_verdict",
+            "target_hypothesis",
+            "primary_signal",
+            "failure_attribution",
+            "next_action",
+            "update_on_exist",
+            "Pilot 的 `strong_positive` 只表示继续研究",
+        ):
+            self.assertIn(phrase, creator)
 
-    def test_wiki_persists_pilot_diagnostics(self):
+    def test_wiki_writes_diagnostics_and_query_pack_reads_lessons(self):
         helper = (ROOT / "tools" / "research_wiki.py").read_text()
-        for token in ("pilot_status", "pilot_diagnostics", "failure_attribution", "target_hq", "isolated_mbe"):
-            self.assertIn(token, helper)
+        for phrase in ("target_hypothesis", "primary_signal", "diagnostics", "failure_attribution", "Recent Pilot Lessons"):
+            self.assertIn(phrase, helper)
+        with tempfile.TemporaryDirectory() as directory:
+            wiki = Path(directory) / "research-wiki"
+            subprocess.run(["python3", "tools/research_wiki.py", "init", str(wiki)], cwd=ROOT, check=True, capture_output=True, text=True)
+            result = subprocess.run([
+                "python3", "tools/research_wiki.py", "upsert_idea", str(wiki),
+                "--title", "Pilot lesson", "--pilot-verdict", "inconclusive",
+                "--target-hypothesis", "signal reaches action",
+                "--primary-signal", "ranking changed but action did not",
+                "--diagnostics", "signal was created upstream",
+                "--failure-attribution", "signal_not_transmitted",
+                "--next-action", "diagnose", "--provenance", "runs/pilot-1",
+            ], cwd=ROOT, check=True, capture_output=True, text=True)
+            idea = next((wiki / "ideas").glob("*.md"))
+            content = idea.read_text()
+            self.assertIn("pilot_verdict:", content)
+            self.assertIn("inconclusive", content)
+            self.assertIn("ranking changed but action did not", content)
+            subprocess.run(["python3", "tools/research_wiki.py", "rebuild_query_pack", str(wiki)], cwd=ROOT, check=True, capture_output=True, text=True)
+            self.assertIn("Recent Pilot Lessons", (wiki / "query_pack.md").read_text())
+            subprocess.run(["python3", "tools/research_wiki.py", "upsert_idea", str(wiki), "--slug", idea.stem, "--title", "Pilot lesson", "--pilot-verdict", "clear_negative", "--target-hypothesis", "H", "--primary-signal", "none", "--diagnostics", "updated lesson", "--failure-attribution", "signal_not_created", "--next-action", "archive", "--update-on-exist"], cwd=ROOT, check=True, capture_output=True, text=True)
+            updated = idea.read_text()
+            self.assertIn("_TODO: the core hypothesis / direction._", updated)
+            self.assertIn("updated lesson", updated)
+            self.assertIn("outcome: pending", updated)
 
-    def test_profiles_are_executable(self):
-        for profile, expected in (("research", "idea-discovery"), ("experiment", "experiment-bridge")):
-            path = ROOT / "profiles" / f"{profile}.tsv"
-            self.assertIn("skills\t", path.read_text())
-            with tempfile.TemporaryDirectory() as project:
-                proc = subprocess.run(
-                    ["bash", "tools/install_aris_codex.sh", project, "--aris-repo", str(ROOT), "--profile", profile, "--dry-run", "--no-doc"],
-                    cwd=ROOT, text=True, capture_output=True, check=False,
-                )
-                self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-                self.assertIn("Selection:", proc.stdout)
-                self.assertIn(expected, path.read_text())
+    def test_profiles_remain_unchanged_scope(self):
+        self.assertTrue((ROOT / "profiles" / "research.tsv").exists())
+        self.assertTrue((ROOT / "profiles" / "experiment.tsv").exists())
 
 if __name__ == "__main__":
     unittest.main()

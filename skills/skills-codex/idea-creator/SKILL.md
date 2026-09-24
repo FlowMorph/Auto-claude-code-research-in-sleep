@@ -115,7 +115,7 @@ Apply this fail-closed flow:
    continue producing the primary idea ranking.
 2. For a cached pack younger than 7 days, scan it immediately before Read. If
    clean, read the raw pack at once. Treat its gaps as search seeds, failed ideas
-   as a conditional banlist (record model/data/budget/implementation conditions), and top papers as known prior work; still run Phase 1 for the
+   as the ARIS failed-ideas banlist, and top papers as known prior work; still run Phase 1 for the
    last 3–6 months.
 3. On any scanner hit or scanner error, leave the raw pack untouched and skip
    wiki context for this run. Do not copy, quarantine, rebuild, rescan, or read
@@ -447,7 +447,12 @@ After each `spawn_agent` or `send_input` reviewer call, save the trace following
 
 1. Phase 1 必须消费 `/research-lit` 的 `PROBLEM_EVIDENCE_PACK`；独立调用时也要执行两轮收集、精读、五集合和 P0–P4 归纳，不能用一次搜索替代。
 2. Phase 2 每个候选先写 Insight Card，再写方法。卡片至少包含问题、证据类型与出处、新认识、最强竞争解释、可区分预测、最小验证、最近工作和风险。
-3. Phase 5 先执行便宜的端到端 Pilot。只有阴性/不确定且无法归因、多阶段机制、存在便宜中间信号或需要验证机制主张时，才拆成诊断 Pilot。每个 Pilot 记录 `target_hq`、`isolated_mbe`、`controls`、`metrics`、`expected_pattern`、`budget`、`failure_attribution` 和 `verdict`。
+3. Phase 5 先执行便宜的端到端 Pilot。只有阴性/不确定且无法归因、多阶段机制、存在便宜中间信号或需要验证机制主张时，才拆成诊断 Pilot。每个 Pilot 记录稳定的 `pilot_verdict`、`target_hypothesis`、`primary_signal`、`failure_attribution`、`next_action` 和 `provenance`，详细中间结果写入灵活的 `diagnostics` 摘要。
 4. verdict 只能为 `strong_positive`、`weak_positive`、`clear_negative`、`inconclusive`；分别进入 refine、保守排序、条件化失败 Idea 记录、补充诊断。Pilot evidence 不直接升级为论文 claim。
 5. Pilot 默认 `CUDA_VISIBLE_DEVICES=0`，允许沿用项目成熟启动方式设置 `CUDA_VISIBLE_DEVICES=0,1` 等 GPU 列表，不创建新的调度器。
 6. Phase 7 将候选、Insight、Pilot 诊断和条件化失败原因写入 Research Wiki；长期研究知识按 `/notion-research` 的用户授权写回 Notion。
+
+
+### Pilot 后 Research Wiki 更新
+
+Phase 7 首次创建 Idea 后，Pilot 完成必须用 helper 的更新能力写回同一 Idea。更新调用至少传入 `pilot_verdict`、`target_hypothesis`、`primary_signal`、`diagnostics`、`failure_attribution`、`next_action` 和 `provenance`，并使用 `update_on_exist` 保留原有 thesis、connections 及正式 outcome。Pilot 的 `strong_positive` 只表示继续研究，不能直接产生正式 claim。

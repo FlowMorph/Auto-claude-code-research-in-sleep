@@ -90,7 +90,7 @@ Examples:
 
 从 Round 1 的 P0–P4 和共性问题中选择值得深挖的问题，围绕每个问题定向搜索至少一组补充论文，重新完成收集、精读和五集合。对已存在的相近工作记录机制条件、已解决部分和剩余限制；相似标题不能直接否决方向。输出 `idea-stage/LITERATURE_ROUND2.md` 和 `idea-stage/PROBLEM_EVIDENCE_PACK.md`。证据包必须标注论文明确内容、跨论文归纳或本文推导，并包含候选 Insight、竞争解释和可区分预测。
 
-P0–P4 只决定追踪优先级：P0 是核心 limitation/失败，P1 是多论文重复问题，P2 是反常/矛盾结果，P3 是未经检验的关键假设，P4 是迁移或规模边界。它们不是正确性评分。
+P0–P4 按 [`research-methodology-cn.md`](../shared-references/research-methodology-cn.md) 的唯一正式定义执行；本 Skill 不复制另一套定义。
 
 
 ### Per-source/per-paper fan-out

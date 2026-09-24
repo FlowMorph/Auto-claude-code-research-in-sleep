@@ -229,9 +229,15 @@ Phase 0/1 先读取 `PROBLEM_EVIDENCE_PACK`、Insight Card、Proposal、Pilot �
 |---|---|---|---|---|---|---|---|
 | 学术子问题 | 机制假设 | 最小组件 | 可复现构建 | 实验 | Pilot / Diagnostic / Formal | claim | 资源约束 |
 
-实验块分为三类：`Pilot Evidence`（低成本排序，不支持最终 claim）、`Diagnostic/Mechanism`（隔离 M/B/E、区分竞争解释）、`Formal Evaluation`（多 seed、强基线和论文表格）。每个块写清信号如何构造、观测指标如何区分预测、对照、预算、停止条件和失败归因；不把 benchmark 数量当作证据强度。只有大型正式实验才填写 `Formal Infra Plan`，记录 GPU 列表、并行 wave、seed、OOM retry、日志和恢复方式，并沿用 experiment-queue 的调度能力。
+实验块严格分为三类：
 
-在 Pilot 已有可靠信号时复用其数据处理和诊断，不重复无目的运行；Pilot 不自动升级为 Formal claim。
+1. `Pilot Evidence`：来自 Idea Screening 的已有结果。通常是 single seed、small subset、少量 steps/epochs、低 scale 的廉价端到端运行。直接复用已有结果，不在本 Skill 中重新设计或重复运行；只判断它已经回答了什么、还缺什么。
+2. `Diagnostic/Mechanism`：只有 Pilot negative、inconclusive、信号未传递或核心机制仍有一个重要不确定性时才安排。一次只回答一个最关键的不确定性，默认复用已有模型、数据处理、checkpoint 和输出，使用最少 seed、最小 subset、最短 wall-clock。H/Q/M/B/E 用来定位问题，不要求 Pilot 覆盖所有 H、M 或 B。
+3. `Formal Evaluation`：方法和 proposal 稳定且必要诊断完成后才进入。这里才设计 full/standard dataset、正式 baseline、multi-seed、robustness、generalization、ablation、failure analysis、统计分析和论文表格。
+
+Pilot 与 Diagnostic 默认不要求 multi-seed、full dataset、full training、完整 baseline suite、正式统计显著性、robustness matrix、generalization matrix、完整 ablation、throughput benchmark 或 GPU scaling benchmark。若普通小规模运行已经有足够信号，不额外构造信号放大；只有机制差异太弱时才说明 treatment/control、放大条件和判别标准。只有大型 Formal Evaluation 才填写 `Formal Infra Plan`，记录 workload、GPU、并行 run/seed、replica、concurrency、batch、memory、wall-clock、GPU-hour 和依赖；只有资源配置显著影响正式实验时间时才做短 throughput probe。
+
+在 Pilot 已有可靠信号时复用其数据处理和诊断，不重复无目的运行；Pilot 和 Diagnostic 都不自动升级为 Formal claim。
 
 ## Output Protocols
 
