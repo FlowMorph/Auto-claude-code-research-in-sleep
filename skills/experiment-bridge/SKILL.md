@@ -374,3 +374,6 @@ Ready for Workflow 2:
 
 Or use /research-pipeline for the full end-to-end flow (includes this bridge).
 ```
+
+
+Before implementation, this workflow requires `/research-implementation-plan` to map each experiment to real repository paths.

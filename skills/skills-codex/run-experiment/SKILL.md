@@ -191,6 +191,10 @@ Only run this after the experiment has completed and results/logs/checkpoints ha
 
 If any artifact copy fails, do not destroy the instance.
 
+## GPU 与执行契约
+
+单 GPU 是默认启动方式。运行前读取项目已有的 GPU 配置；支持 `CUDA_VISIBLE_DEVICES=0,1`、`GPU_IDS=0,1` 或项目既有多卡启动命令。只有模型单卡放不下、基线已用多卡，或单卡无法在 Pilot time-to-signal 预算内给出有效信号且已有成熟多卡配置时才扩大 GPU 列表。该 Skill 不创建调度器、不自动抢占 GPU，并在运行记录中保存实际 GPU 列表、预算和退出原因。
+
 ## Key Rules
 
 - ALWAYS check GPU availability first — never blindly assign GPUs

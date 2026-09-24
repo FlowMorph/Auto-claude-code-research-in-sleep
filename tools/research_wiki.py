@@ -1101,7 +1101,9 @@ def _idea_slugify(name: str, slug: str = "") -> str:
 
 
 def _render_idea_page(slug, title, description, stage, outcome, thesis, risks,
-                      based_on_ids, target_gap_ids, tags):
+                      based_on_ids, target_gap_ids, tags, pilot_status="",
+                      pilot_verdict="", pilot_diagnostics="", failure_attribution="",
+                      target_hq="", isolated_mbe="", budget="", next_action=""):
     """Render an ideas/<slug>.md page following the research-wiki schema.
 
     Mirrors _render_claim_page. The frontmatter `outcome` field is the one the
@@ -1119,6 +1121,9 @@ def _render_idea_page(slug, title, description, stage, outcome, thesis, risks,
     lines.append("based_on: [" + ", ".join(_yaml_quote(i) for i in based_on_ids) + "]")
     lines.append("target_gaps: [" + ", ".join(_yaml_quote(i) for i in target_gap_ids) + "]")
     lines.append("tags: [" + ", ".join(_yaml_quote(t) for t in tags) + "]")
+    for key, value in (("pilot_status", pilot_status), ("pilot_verdict", pilot_verdict), ("failure_attribution", failure_attribution), ("target_hq", target_hq), ("isolated_mbe", isolated_mbe), ("budget", budget), ("next_action", next_action)):
+        if value.strip():
+            lines.append(f"{key}: {_yaml_quote(value)}")
     lines.append("---")
     lines.append("")
     lines.append(f"# {title}")
@@ -1133,6 +1138,17 @@ def _render_idea_page(slug, title, description, stage, outcome, thesis, risks,
     lines.append("")
     lines.append("## Key risks")
     lines.append(risks.strip() if risks.strip() else "_TODO: novelty / feasibility risks._")
+    if any(v.strip() for v in (pilot_status, pilot_verdict, pilot_diagnostics, failure_attribution, target_hq, isolated_mbe, budget, next_action)):
+        lines.append("")
+        lines.append("## Pilot diagnostics")
+        lines.append(f"- status: {pilot_status or '_not recorded_'}")
+        lines.append(f"- verdict: {pilot_verdict or '_not recorded_'}")
+        lines.append(f"- target H/Q: {target_hq or '_not recorded_'}")
+        lines.append(f"- isolated M/B/E: {isolated_mbe or '_not recorded_'}")
+        lines.append(f"- budget: {budget or '_not recorded_'}")
+        lines.append(f"- failure attribution: {failure_attribution or '_not recorded_'}")
+        lines.append(f"- diagnostics: {pilot_diagnostics or '_not recorded_'}")
+        lines.append(f"- next action: {next_action or '_not recorded_'}")
     lines.append("")
     lines.append("## Connections")
     lines.append("_Edges are recorded in `graph/edges.jsonl`; summarize here for human readers._")
@@ -1143,7 +1159,10 @@ def _render_idea_page(slug, title, description, stage, outcome, thesis, risks,
 def upsert_idea(wiki_root: str, slug: str, title: str, *, description: str = "",
                 stage: str = "proposed", outcome: str = "pending",
                 thesis: str = "", risks: str = "",
-                tags: list[str] | None = None,
+                pilot_status: str = "", pilot_verdict: str = "",
+                pilot_diagnostics: str = "", failure_attribution: str = "",
+                target_hq: str = "", isolated_mbe: str = "", budget: str = "",
+                next_action: str = "", tags: list[str] | None = None,
                 based_on: list[str] | None = None,
                 target_gaps: list[str] | None = None,
                 update_on_exist: bool = False) -> Path:
@@ -1205,6 +1224,8 @@ def upsert_idea(wiki_root: str, slug: str, title: str, *, description: str = "",
         description = _q(description, "description")
         thesis = _q(thesis, "thesis")
         risks = _q(risks, "risks")
+        pilot_diagnostics = _q(pilot_diagnostics, "pilot_diagnostics")
+        failure_attribution = _q(failure_attribution, "failure_attribution")
         if _q_hits:
             qlog = root / "graph" / "quarantine.log"
             qlog.parent.mkdir(parents=True, exist_ok=True)
@@ -1250,7 +1271,10 @@ def upsert_idea(wiki_root: str, slug: str, title: str, *, description: str = "",
     target_gap_ids = [n for n in (_norm(t, "gap:") for t in (target_gaps or [])) if n]
 
     rendered = _render_idea_page(slug, title, description, stage, outcome, thesis,
-                                 risks, based_on_ids, target_gap_ids, tags)
+                                 risks, based_on_ids, target_gap_ids, tags,
+                                 pilot_status, pilot_verdict, pilot_diagnostics,
+                                 failure_attribution, target_hq, isolated_mbe, budget,
+                                 next_action)
     page_path.write_text(rendered, encoding="utf-8")
 
     # Wire edges (reuse add_edge so dedup + JSONL format match paper/claim edges).
@@ -1274,7 +1298,10 @@ _EXPERIMENT_CONFIDENCE = {"high", "medium", "low"}
 
 
 def _render_experiment_page(slug, title, idea_id, verdict, confidence, date,
-                            hardware, duration, metrics, reasoning, provenance, tags):
+                            hardware, duration, metrics, reasoning, provenance, tags,
+                            pilot_status="", pilot_verdict="", pilot_diagnostics="",
+                            failure_attribution="", target_hq="", isolated_mbe="",
+                            budget="", next_action=""):
     """Render an experiments/<slug>.md page (mirrors _render_claim_page). All
     free-form frontmatter values are _yaml_quote-wrapped (newline-injection safe);
     verdict/confidence are validated enums; metrics/reasoning live in the body."""
@@ -1292,6 +1319,9 @@ def _render_experiment_page(slug, title, idea_id, verdict, confidence, date,
     lines.append(f"provenance: {_yaml_quote(provenance)}")
     lines.append(f"added: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}")
     lines.append("tags: [" + ", ".join(_yaml_quote(t) for t in tags) + "]")
+    for key, value in (("pilot_status", pilot_status), ("pilot_verdict", pilot_verdict), ("failure_attribution", failure_attribution), ("target_hq", target_hq), ("isolated_mbe", isolated_mbe), ("budget", budget), ("next_action", next_action)):
+        if value.strip():
+            lines.append(f"{key}: {_yaml_quote(value)}")
     lines.append("---")
     lines.append("")
     lines.append(f"# {label}")
@@ -1304,6 +1334,17 @@ def _render_experiment_page(slug, title, idea_id, verdict, confidence, date,
     lines.append("")
     lines.append("## Reasoning")
     lines.append(reasoning.strip() if reasoning.strip() else "_TODO: why this verdict._")
+    if any(v.strip() for v in (pilot_status, pilot_verdict, pilot_diagnostics, failure_attribution, target_hq, isolated_mbe, budget, next_action)):
+        lines.append("")
+        lines.append("## Pilot diagnostics")
+        lines.append(f"- status: {pilot_status or '_not recorded_'}")
+        lines.append(f"- verdict: {pilot_verdict or '_not recorded_'}")
+        lines.append(f"- target H/Q: {target_hq or '_not recorded_'}")
+        lines.append(f"- isolated M/B/E: {isolated_mbe or '_not recorded_'}")
+        lines.append(f"- budget: {budget or '_not recorded_'}")
+        lines.append(f"- failure attribution: {failure_attribution or '_not recorded_'}")
+        lines.append(f"- diagnostics: {pilot_diagnostics or '_not recorded_'}")
+        lines.append(f"- next action: {next_action or '_not recorded_'}")
     lines.append("")
     lines.append("## Connections")
     lines.append("_Edges are recorded in `graph/edges.jsonl`; summarize here for human readers._")
@@ -1315,7 +1356,10 @@ def add_experiment(wiki_root: str, slug: str, *, title: str = "", idea: str = ""
                    verdict: str = "no", confidence: str = "medium",
                    date: str = "", hardware: str = "", duration: str = "",
                    metrics: str = "", reasoning: str = "", provenance: str = "",
-                   tags: list[str] | None = None,
+                   pilot_status: str = "", pilot_verdict: str = "",
+                   pilot_diagnostics: str = "", failure_attribution: str = "",
+                   target_hq: str = "", isolated_mbe: str = "", budget: str = "",
+                   next_action: str = "", tags: list[str] | None = None,
                    update_on_exist: bool = False) -> Path:
     """Create (or update) an experiments/<slug>.md node and wire its edge.
 
@@ -1375,6 +1419,8 @@ def add_experiment(wiki_root: str, slug: str, *, title: str = "", idea: str = ""
 
         metrics = _q(metrics, "metrics")
         reasoning = _q(reasoning, "reasoning")
+        pilot_diagnostics = _q(pilot_diagnostics, "pilot_diagnostics")
+        failure_attribution = _q(failure_attribution, "failure_attribution")
         if _q_hits:
             qlog = root / "graph" / "quarantine.log"
             qlog.parent.mkdir(parents=True, exist_ok=True)
@@ -1392,7 +1438,9 @@ def add_experiment(wiki_root: str, slug: str, *, title: str = "", idea: str = ""
 
     rendered = _render_experiment_page(slug, title, idea_id, verdict, confidence,
                                        date, hardware, duration, metrics, reasoning,
-                                       provenance, tags)
+                                       provenance, tags, pilot_status, pilot_verdict,
+                                       pilot_diagnostics, failure_attribution, target_hq,
+                                       isolated_mbe, budget, next_action)
     page_path.write_text(rendered, encoding="utf-8")
 
     # Wire the idea --tested_by--> exp edge (idea side owns it, per the schema).
@@ -1596,6 +1644,8 @@ def main():
                         help="One of: " + ", ".join(sorted(_IDEA_OUTCOMES)))
     p_idea.add_argument("--thesis", default="", help="Core hypothesis / direction (body)")
     p_idea.add_argument("--risks", default="", help="Novelty / feasibility risks (body)")
+    for _arg, _help in (("--pilot-status", "Pilot 状态"), ("--pilot-verdict", "Pilot verdict"), ("--pilot-diagnostics", "Pilot 诊断"), ("--failure-attribution", "失败归因"), ("--target-hq", "目标 H/Q"), ("--isolated-mbe", "隔离 M/B/E"), ("--budget", "Pilot 预算"), ("--next-action", "下一步")):
+        p_idea.add_argument(_arg, default="", help=_help)
     p_idea.add_argument("--tags", default="", help="Comma-separated tag list")
     p_idea.add_argument("--based-on", dest="based_on", default="",
                         help="Comma-separated paper node_ids/slugs that inspired this idea")
@@ -1618,6 +1668,8 @@ def main():
     p_exp.add_argument("--duration", default="", help="Wall-clock / GPU-hours")
     p_exp.add_argument("--metrics", default="", help="Key metrics (body)")
     p_exp.add_argument("--reasoning", default="", help="Why this verdict (body)")
+    for _arg, _help in (("--pilot-status", "Pilot 状态"), ("--pilot-verdict", "Pilot verdict"), ("--pilot-diagnostics", "Pilot 诊断"), ("--failure-attribution", "失败归因"), ("--target-hq", "目标 H/Q"), ("--isolated-mbe", "隔离 M/B/E"), ("--budget", "Pilot 预算"), ("--next-action", "下一步")):
+        p_exp.add_argument(_arg, default="", help=_help)
     p_exp.add_argument("--provenance", default="", help="Run dir / EXPERIMENT_AUDIT pointer (honesty receipt)")
     p_exp.add_argument("--tags", default="", help="Comma-separated tag list")
     p_exp.add_argument("--update-on-exist", action="store_true",
@@ -1674,7 +1726,11 @@ def main():
             return [x.strip() for x in s.split(",") if x.strip()]
         upsert_idea(args.wiki_root, args.slug, args.title,
                     description=args.description, stage=args.stage, outcome=args.outcome,
-                    thesis=args.thesis, risks=args.risks, tags=_spliti(args.tags),
+                    thesis=args.thesis, risks=args.risks, pilot_status=args.pilot_status,
+                    pilot_verdict=args.pilot_verdict, pilot_diagnostics=args.pilot_diagnostics,
+                    failure_attribution=args.failure_attribution, target_hq=args.target_hq,
+                    isolated_mbe=args.isolated_mbe, budget=args.budget, next_action=args.next_action,
+                    tags=_spliti(args.tags),
                     based_on=_spliti(args.based_on), target_gaps=_spliti(args.target_gaps),
                     update_on_exist=args.update_on_exist)
     elif args.command == "add_experiment":
@@ -1682,6 +1738,10 @@ def main():
                        verdict=args.verdict, confidence=args.confidence, date=args.date,
                        hardware=args.hardware, duration=args.duration, metrics=args.metrics,
                        reasoning=args.reasoning, provenance=args.provenance,
+                       pilot_status=args.pilot_status, pilot_verdict=args.pilot_verdict,
+                       pilot_diagnostics=args.pilot_diagnostics, failure_attribution=args.failure_attribution,
+                       target_hq=args.target_hq, isolated_mbe=args.isolated_mbe, budget=args.budget,
+                       next_action=args.next_action,
                        tags=[x.strip() for x in args.tags.split(",") if x.strip()],
                        update_on_exist=args.update_on_exist)
     elif args.command == "sync":

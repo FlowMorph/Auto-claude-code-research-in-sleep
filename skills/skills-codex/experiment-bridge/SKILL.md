@@ -22,7 +22,7 @@ refine-logs/FINAL_PROPOSAL.md
 
 ## Constants
 
-- **AUTO_DEPLOY = false** — Deployment requires explicit approval of the implementation plan, stages, backend, data, and budget in the current task.
+- **AUTO_DEPLOY = true** — 保留 ARIS 自动执行能力；`AUTO_PROCEED=false` 或显式 checkpoint 时，部署前暂停等待批准。任何运行都必须有实现映射、阶段、后端、数据和预算。
 - **CODE_REVIEW = true** — Secondary Codex reviewer with xhigh reasoning reviews experiment code before deployment. Catches logic bugs before wasting GPU hours. Set `false` to skip.
 - **SANITY_FIRST = true** — Run the sanity-stage experiment first (smallest, fastest) before launching the rest. Catches setup bugs early.
 - **MAX_PARALLEL_RUNS = 4** — Maximum number of experiments to deploy in parallel (limited by available GPUs).
@@ -358,3 +358,9 @@ Ready for Workflow 2:
 
 Or use /research-pipeline for the full end-to-end flow (includes this bridge).
 ```
+
+## ARIS Codex 实现映射前置契约
+
+在 Phase 2 实现前必须调用 `/research-implementation-plan`，或读取当前运行生成的实现映射。该阶段把 Experiment Plan 中每个 B/E 映射到真实仓库文件、函数/入口、数据与 split、预处理、配置、命令、输出、指标、日志和资源；缺少真实映射时不得凭空修改科研源码。随后执行一次 H/Q/M/B/E 与实现映射的一致性检查，记录 `implementation_plan_status` 和未解决项。
+
+Phase 4 根据 `AUTO_DEPLOY` 与 `AUTO_PROCEED` 决定是否自动部署；自动模式沿用原有队列、multi-seed、wave、OOM retry 和依赖调度。Pilot、诊断实验和正式评估分别记录，结果通过 `/result-to-claim` 才能进入正式 claim。

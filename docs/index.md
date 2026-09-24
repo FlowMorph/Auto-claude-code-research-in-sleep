@@ -8,4 +8,4 @@
 - 研究阶段选择：[[profiles/research|research profile]]
 - 实验阶段选择：[[profiles/experiment|experiment profile]]
 
-Codex 实际读取 `skills/skills-codex/`；其他运行时读取对应的 `skills/` 镜像。两份入口需要保持行为一致。
+本轮实际配置和验收只针对 Codex 的 `skills/skills-codex/`；主线 `skills/` 保持原有语义，不作为本轮同步目标。

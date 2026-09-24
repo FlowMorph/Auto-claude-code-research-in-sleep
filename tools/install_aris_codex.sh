@@ -23,6 +23,7 @@
 #   --uninstall      remove only entries in manifest; delete manifest
 #
 # Selection (catalog: tools/skill-groups.tsv in the aris-repo):
+#   --profile research|experiment  install the curated Codex profile from profiles/*.tsv
 #   --groups A,B           install only these skill groups (see --list-groups)
 #   --skills X,Y           additionally install these skills (clears declined mark)
 #   --exclude X,Y          never install these skills (recorded as declined)
@@ -75,6 +76,7 @@ CLEAR_STALE_LOCK=false
 WITH_CLAUDE_OVERLAY=false
 WITH_GEMINI_OVERLAY=false
 REPLACE_LINK_NAMES=()
+PROFILE_NAME=""       # curated profile name from --profile
 SELECT_GROUPS=""     # comma list from --groups
 SELECT_SKILLS=""     # comma list from --skills
 EXCLUDE_SKILLS=""    # comma list from --exclude
@@ -96,6 +98,7 @@ while [[ $# -gt 0 ]]; do
         --no-doc) NO_DOC=true; shift ;;
         --replace-link) REPLACE_LINK_NAMES+=("${2:?--replace-link requires NAME}"); shift 2 ;;
         --clear-stale-lock) CLEAR_STALE_LOCK=true; shift ;;
+        --profile) PROFILE_NAME="${2:?--profile requires research or experiment}"; shift 2 ;;
         --groups) SELECT_GROUPS="${SELECT_GROUPS:+$SELECT_GROUPS,}${2:?--groups requires A,B,...}"; shift 2 ;;
         --skills) SELECT_SKILLS="${SELECT_SKILLS:+$SELECT_SKILLS,}${2:?--skills requires X,Y,...}"; shift 2 ;;
         --exclude) EXCLUDE_SKILLS="${EXCLUDE_SKILLS:+$EXCLUDE_SKILLS,}${2:?--exclude requires X,Y,...}"; shift 2 ;;
@@ -534,6 +537,23 @@ DOC_FILE="$PROJECT_PATH/$DOC_FILE_NAME"
 LEGACY_NESTED="$PROJECT_PATH/.agents/skills/aris"
 CATALOG_PATH="$ARIS_REPO/$CATALOG_REL"
 DECLINED_PATH="$PROJECT_ARIS_DIR/$DECLINED_NAME"
+
+load_profile() {
+    [[ -z "$PROFILE_NAME" ]] && return 0
+    [[ "$PROFILE_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || die "invalid profile name: $PROFILE_NAME"
+    local profile_path="$ARIS_REPO/profiles/$PROFILE_NAME.tsv"
+    [[ -f "$profile_path" ]] || die "profile not found: $profile_path"
+    local profile_skills
+    profile_skills="$(awk -F'\t' '$1=="skills" {print $2}' "$profile_path" | tr -d '\r' | tr ', ' '\n' | sed '/^$/d' | paste -sd, -)"
+    [[ -n "$profile_skills" ]] || die "profile has no skills: $profile_path"
+    if [[ -n "$SELECT_SKILLS" ]]; then
+        SELECT_SKILLS="$profile_skills,$SELECT_SKILLS"
+    else
+        SELECT_SKILLS="$profile_skills"
+    fi
+    log "Profile: $PROFILE_NAME ($profile_path)"
+}
+load_profile
 
 if $LIST_GROUPS; then
     print_group_catalog

@@ -26,7 +26,7 @@ Each phase builds on the previous one's output. The final deliverables are a val
 - **PILOT_TIMEOUT_HOURS = 3** — Hard timeout: kill any running pilot that exceeds 3 hours. Collect partial results if available.
 - **MAX_PILOT_IDEAS = 3** — Run pilots for at most 3 top ideas in parallel. Additional ideas are validated on paper only.
 - **MAX_TOTAL_GPU_HOURS = 8** — Total GPU budget across all pilots. If exceeded, skip remaining pilots and note in report.
-- **AUTO_PROCEED = false** — Direction selection, pilot approval, Notion writes, and implementation start require explicit user authorization. Reporting a recommendation may continue; execution does not.
+- **AUTO_PROCEED = true** — 默认继续执行方向选择、Pilot 和已授权的后续阶段；传入 `AUTO_PROCEED=false` 或配置 checkpoint 时才暂停等待用户。Notion 写回仍遵守 `/notion-research` 的授权边界。
 - **REVIEWER_MODEL = `gpt-6-astra`** — Model used via a secondary Codex agent. Must be an OpenAI model (e.g., `gpt-6-astra`, `o3`, `gpt-4o`). Passed to sub-skills.
 - **ARXIV_DOWNLOAD = false** — When `true`, `/research-lit` downloads the top relevant arXiv PDFs during Phase 1. When `false` (default), only fetches metadata. Passed through to `/research-lit`.
 - **COMPACT = false** — When `true`, generate compact summary files for short-context sessions and downstream skills. Writes `idea-stage/IDEA_CANDIDATES.md`.
@@ -279,7 +279,7 @@ then end the turn.
 
 ### Phase 3: Deep Novelty Verification
 
-For each top idea (positive pilot signal), run a thorough novelty check:
+For each surviving candidate (including `pilot_skipped`, `weak_positive` and `inconclusive` when evidence is insufficient), run a thorough novelty check:
 
 ```
 /novelty-check "[top idea 1 description]"
@@ -292,7 +292,7 @@ For each top idea (positive pilot signal), run a thorough novelty check:
 - Check for concurrent work (last 3-6 months)
 - Identify closest existing work and differentiation points
 
-**Update `idea-stage/IDEA_REPORT.md`** with deep novelty results. Eliminate any idea that turns out to be already published.
+**Update `idea-stage/IDEA_REPORT.md`** with deep novelty results. Mark an idea as overlapping only after mechanism-level comparison; record solved parts, conditions and remaining gap. Do not eliminate solely because a nearby paper exists.
 
 ### Phase 4: External Critical Review
 
@@ -461,7 +461,7 @@ After finalizing `idea-stage/IDEA_REPORT.md` (and the optional `IDEA_CANDIDATES.
 - **Don't skip phases.** Each phase filters and validates — skipping leads to wasted effort later.
 - **Checkpoint between phases.** Briefly summarize what was found. With `AUTO_PROCEED=true`, state the selected next action and keep executing in the same turn; with `false`, ask and end the turn.
 - **Let pilots kill, not vibes.** A cheap pilot that says no beats a month of implementation that says no — but the kill needs empirical signal or a named published paper, not taste. Talking yourself out of ideas on paper is how pipelines end up with nothing to run.
-- **Empirical signal > theoretical appeal.** An idea with a positive pilot outranks a "sounds great" idea without evidence.
+- **Empirical signal > theoretical appeal.** A positive pilot raises priority, while weak, negative and inconclusive outcomes retain their diagnostic meaning and conditions.
 - **Document everything.** Dead ends are just as valuable as successes for future reference.
 - **Be honest with the reviewer.** Include negative results and failed pilots in the review prompt.
 - **Feishu notifications are optional.** If `~/.codex/feishu.json` exists, send `checkpoint` at each phase transition and `pipeline_done` at final report. If absent/off, skip silently.
@@ -477,3 +477,19 @@ After this pipeline produces a validated top idea:
 
 Or use /research-pipeline for the full end-to-end flow.
 ```
+
+## ARIS Codex 两轮与 Pilot 状态契约
+
+### Literature handoff
+
+Phase 1 必须调用或读取 `/research-lit` 的两轮产物：第一轮领域地图与五集合、第二轮围绕 P0–P4 问题的定向五集合，以及 `PROBLEM_EVIDENCE_PACK`。若产物缺失，先补齐对应轮次；不能将一次检索报告当作完整文献阶段。Phase 0 通过 `/notion-research` 读取用户文献库、Idea 与验证库、研究认知与经验库，阶段完成后按其规则写回。
+
+### Insight and research map
+
+Phase 2 在具体 Idea 前形成 Insight Card，并把候选映射为 H/Q/M/B/E：H 是机制假设，Q 是学术子问题，M 是最小方法组件，B 是可复现构建，E 是回答 H/Q 的实验。映射按实际需要使用，主链必须闭合。
+
+### Pilot branching
+
+Phase 2/3 的每个候选保存 `pilot_status`：`pending`、`strong_positive`、`weak_positive`、`clear_negative`、`inconclusive`、`pilot_skipped` 或 `needs_manual_pilot`。先跑低成本端到端 Pilot；仅在无法归因、多阶段机制、便宜中间信号或机制主张时拆解诊断 Pilot。`strong_positive` 进入 refine/scale；`clear_negative` 进入带条件的 ARIS failed-ideas banlist；其余状态保留诊断和下一步，不得静默丢弃。
+
+AUTO_PROCEED=true 时这些状态由流程自动分支；AUTO_PROCEED=false 时只在配置的 checkpoint 暂停。Phase 3 不以“Pilot 必须 positive”作为进入查新的前提，Pilot skipped、weak 或 inconclusive 的候选仍可进行理论查新与保守排序。

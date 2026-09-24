@@ -5,13 +5,13 @@ argument-hint: "[subcommand: init|ingest|sync|query|update|lint|stats]"
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, WebSearch, WebFetch
 ---
 
-# Research Wiki: Persistent Research Knowledge Base
+# Research Wiki: ARIS/Codex Process Memory and Research Graph
 
 Subcommand: **$ARGUMENTS**
 
 ## Overview
 
-The research wiki is a persistent, per-project knowledge base that accumulates structured knowledge across the entire ARIS research lifecycle. Unlike one-off literature surveys that are used and forgotten, the wiki **compounds** — every paper read, idea tested, experiment run, and review received makes the wiki smarter.
+The research wiki is ARIS/Codex 的项目级过程记忆、缓存、图谱和查询包，积累结构化研究状态并服务整个 ARIS 生命周期。用户长期科研知识仍由 Notion 三类库维护；`/notion-research` 负责读取和按授权写回，Research Wiki 不替代 Notion。它持续积累每篇论文、每个 Idea、每次实验和每轮评审的过程状态，避免重复推导。
 
 Inspired by [Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f): compile knowledge once, keep it current, don't re-derive on every query.
 
@@ -25,6 +25,10 @@ Inspired by [Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6
 | **Idea** | `ideas/` | `idea:<id>` | A research idea (proposed, tested, or failed) |
 | **Experiment** | `experiments/` | `exp:<id>` | A concrete experiment run with results |
 | **Claim** | `claims/` | `claim:<id>` | A theorem/headline with an honest PROOF status — born via `/proof-checker` (see Hook 4) |
+
+### Pilot 与失败条件字段
+
+Idea 和 Experiment 节点应在可用时记录 `pilot_verdict`、`pilot_status`、`pilot_diagnostics`、`failure_attribution`、`target_hq`、`isolated_mbe`、`budget` 和 `next_action`。`strong_positive`、`weak_positive`、`clear_negative`、`inconclusive` 是经验状态；`clear_negative` 只形成带模型/数据/预算/实现条件的 failed-ideas banlist，不构成无条件科学否决。Pilot 证据与 Formal claim 分开，Formal claim 由 `/result-to-claim` 或 `/proof-checker` 的原有流程产生。
 
 ### Typed Relationships (`graph/edges.jsonl`)
 
@@ -325,7 +329,7 @@ specific result set differs.
 ```
 if research-wiki/query_pack.md exists (and < 7 days old):
     prepend query_pack to landscape context
-    treat failed ideas as banlist
+    treat failed ideas as conditional banlist with model/data/budget/implementation conditions
     treat top gaps as search seeds
     still run fresh literature search for last 3-6 months
 ```
@@ -370,7 +374,7 @@ if EXP_NODE_OK:
 # Update idea outcome
 update_idea(active_idea_id, outcome=verdict)
 
-# If failed, record WHY for future ideation
+# If failed, record WHY and the applicable conditions for future ideation
 if verdict in ("no", "partial"):
     update_idea failure_notes with specific metrics and reasons
 

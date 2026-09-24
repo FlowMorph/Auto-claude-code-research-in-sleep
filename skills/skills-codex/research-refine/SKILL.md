@@ -721,3 +721,20 @@ Typical flow:
 6. Later loops operate on results, not just ideas
 
 This skill also works standalone if you already know the problem and just need the method to become concrete.
+
+## ARIS Codex 研究结构与语义修订契约
+
+初始化时除 Problem Anchor 外，必须冻结当前 `PROBLEM_EVIDENCE_PACK`、Insight Card、竞争解释和可区分预测，并建立 H/Q/M/B/E 表：H 是机制假设，Q 是学术子问题，M 是最小组件，B 是可复现构建，E 是验证实验。每个核心 H/Q 必须有直接验证；Pilot evidence、Diagnostic/Mechanism evidence 和 Formal Evaluation 分开记录。
+
+### Impact Check：Revision Propagation & Consistency Check
+
+收到用户意见、Reviewer 反馈、新论文或实验结果后，先回答：
+
+1. 反馈改变了哪个研究判断、证据边界或实现前提？
+2. 哪些 H/Q/M/B/E/claim 依赖该判断？哪些有独立证据可以保留？
+3. 修改后 `证据 → 问题/Insight → H/Q → M → B/E → claim` 是否闭合？
+4. 是否需要删减、合并或拒绝某条 Reviewer 建议，以保持一个主导贡献？
+
+根据语义依赖传播修改，不按文档位置机械重跑。局部措辞保持局部修订；研究判断变化时检查相关下游；结构性反馈才扩大范围。每轮把影响范围、保留项、重推项和仍未验证项写入 `refine-logs/round-N-refinement.md` 与 `REFINEMENT_REPORT.md`。原生 `SCORE_THRESHOLD = 9`、Reviewer loop、MAX_ROUNDS 和 pushback 保持不变；达到 9 仍须通过上述一致性检查，分数不能代替证据。
+
+最终提案必须包含：竞争解释及其预测、Pilot verdict/诊断、未验证假设、最小充分机制、贡献边界，以及交给 `/experiment-plan` 的 H/Q/M/B/E 研究地图。

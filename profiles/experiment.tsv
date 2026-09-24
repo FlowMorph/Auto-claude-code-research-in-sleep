@@ -1,2 +1,2 @@
-# 实验阶段：在已批准计划和实现映射后使用
+# ARIS Codex 实验阶段 profile；由 tools/install_aris_codex.sh --profile experiment 读取
 skills	research-implementation-plan,experiment-bridge,run-experiment,monitor-experiment,experiment-queue,system-profile,training-check,experiment-audit,analyze-results,result-to-claim,ablation-planner

@@ -1,2 +1,2 @@
-# 研究阶段：文献、Idea、查新、评审、方法精炼与实验规划
+# ARIS Codex 研究阶段 profile；由 tools/install_aris_codex.sh --profile research 读取
 skills	research-lit,idea-creator,idea-discovery,novelty-check,research-review,research-refine,research-refine-pipeline,research-wiki,notion-research,experiment-plan,ablation-planner,analyze-results,result-to-claim,formula-derivation

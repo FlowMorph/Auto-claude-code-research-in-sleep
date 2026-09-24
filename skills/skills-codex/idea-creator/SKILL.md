@@ -7,7 +7,7 @@ description: "Generate and rank research ideas given a broad direction. Use when
 
 Generate publishable research ideas for: $ARGUMENTS
 
-本 fork 的跨阶段规则见 [`research-methodology-cn.md`](../shared-references/research-methodology-cn.md)。本 Skill 默认只生成和比较候选，不启动 pilot、部署或修改科研源码；实验必须有当前任务的明确授权。
+本 fork 的跨阶段规则见 [`research-methodology-cn.md`](../shared-references/research-methodology-cn.md)。本 Skill 按调用方的 `AUTO_PROCEED`、预算和 checkpoint 配置执行；保留 ARIS 的自动 Pilot 能力，未经配置的高成本部署仍然暂停。
 
 ## Overview
 
@@ -18,7 +18,7 @@ Given a broad research direction from the user, systematically generate, validat
 - **PILOT_MAX_HOURS = 2** — Skip any pilot estimated to take > 2 hours per GPU. Flag as "needs manual pilot".
 - **PILOT_TIMEOUT_HOURS = 3** — Hard timeout: kill pilots exceeding 3 hours. Collect partial results if available.
 - **MAX_PILOT_IDEAS = 3** — Pilot at most 3 ideas in parallel. Additional ideas are validated on paper only.
-- **MAX_TOTAL_GPU_HOURS = 8** — Total GPU budget for all pilots combined after explicit approval; default pilot budget is 0.
+- **MAX_TOTAL_GPU_HOURS = 8** — Total GPU budget for all pilots combined; `AUTO_PROCEED=true` 且预算有效时可自动执行。
 - **REVIEWER_MODEL = `gpt-6-astra`** — Model used via a secondary Codex agent for brainstorming and review. Must be an OpenAI model (e.g., `gpt-6-astra`, `o3`, `gpt-4o`).
 - **REVIEWER_BACKEND = `codex`** — Default: Codex xhigh reviewer through `spawn_agent` / `send_input`. Use `--reviewer: oracle-pro` only when explicitly requested; if Oracle is unavailable, warn and fall back to Codex xhigh.
 - **OUTPUT_DIR = `idea-stage/`** — All idea-stage outputs go here. Create the directory if it doesn't exist.
@@ -115,7 +115,7 @@ Apply this fail-closed flow:
    continue producing the primary idea ranking.
 2. For a cached pack younger than 7 days, scan it immediately before Read. If
    clean, read the raw pack at once. Treat its gaps as search seeds, failed ideas
-   as a banlist, and top papers as known prior work; still run Phase 1 for the
+   as a conditional banlist (record model/data/budget/implementation conditions), and top papers as known prior work; still run Phase 1 for the
    last 3–6 months.
 3. On any scanner hit or scanner error, leave the raw pack untouched and skip
    wiki context for this run. Do not copy, quarantine, rebuild, rescan, or read
@@ -280,15 +280,15 @@ For each surviving idea, run a deeper evaluation:
 
 3. **Combine rankings**: Merge your assessment with GPT-6-Astra's ranking. Select top 2-3 ideas for pilot experiments.
 
-### Phase 5: Parallel Pilot Experiments (only after explicit approval)
+### Phase 5: Parallel Minimum Pilot Experiments
 
-Skip this phase unless the user explicitly approves the selected ideas, data construction, compute budget, backend, and run stages in the current task. A request to find or refine ideas alone is not approval. If skipped, write the smallest discriminating experiment plan and mark candidates as awaiting validation.
+Run this phase when the orchestrator has `AUTO_PROCEED=true` and a valid budget/backend. When a configured checkpoint blocks execution, write the smallest discriminating experiment plan and mark candidates as awaiting validation; do not treat that checkpoint as a change to the Idea ranking.
 
 Before committing to a full research effort, run cheap pilot experiments to get empirical signal. This is the key differentiator from paper-only validation.
 
 1. **Design pilots**: For each top idea, define the minimal experiment that would give a positive or negative signal:
    - Single seed, small scale (e.g., small dataset subset, fewer epochs)
-   - Target: 30 min - PILOT_MAX_HOURS per pilot on 1 GPU
+   - Target: 30 min - PILOT_MAX_HOURS per pilot，默认单 GPU；单卡放不下、项目基线为多卡或成熟多卡配置能更快获得信号时允许使用 GPU 列表。
    - **Estimate GPU-hours BEFORE launching.** If estimated time > PILOT_MAX_HOURS, reduce scale (fewer epochs, smaller subset) or flag as "needs manual pilot"
    - Decision criterion defined upfront — including what a positive, negative, and null outcome would each teach. Metric improvement is not required for a diagnostic contribution.
 
@@ -442,3 +442,12 @@ implement                     → write code
 ## Review Tracing
 
 After each `spawn_agent` or `send_input` reviewer call, save the trace following `../shared-references/review-tracing.md`. Include the reviewer route, saved agent id, prompt summary, raw output path, selected ideas, and rejected ideas.
+
+## ARIS Codex 方法论执行契约
+
+1. Phase 1 必须消费 `/research-lit` 的 `PROBLEM_EVIDENCE_PACK`；独立调用时也要执行两轮收集、精读、五集合和 P0–P4 归纳，不能用一次搜索替代。
+2. Phase 2 每个候选先写 Insight Card，再写方法。卡片至少包含问题、证据类型与出处、新认识、最强竞争解释、可区分预测、最小验证、最近工作和风险。
+3. Phase 5 先执行便宜的端到端 Pilot。只有阴性/不确定且无法归因、多阶段机制、存在便宜中间信号或需要验证机制主张时，才拆成诊断 Pilot。每个 Pilot 记录 `target_hq`、`isolated_mbe`、`controls`、`metrics`、`expected_pattern`、`budget`、`failure_attribution` 和 `verdict`。
+4. verdict 只能为 `strong_positive`、`weak_positive`、`clear_negative`、`inconclusive`；分别进入 refine、保守排序、条件化失败 Idea 记录、补充诊断。Pilot evidence 不直接升级为论文 claim。
+5. Pilot 默认 `CUDA_VISIBLE_DEVICES=0`，允许沿用项目成熟启动方式设置 `CUDA_VISIBLE_DEVICES=0,1` 等 GPU 列表，不创建新的调度器。
+6. Phase 7 将候选、Insight、Pilot 诊断和条件化失败原因写入 Research Wiki；长期研究知识按 `/notion-research` 的用户授权写回 Notion。

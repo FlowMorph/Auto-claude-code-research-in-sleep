@@ -78,6 +78,21 @@ Examples:
 
 ## Workflow
 
+## 两轮文献执行契约（必须实际执行）
+
+`/research-lit` 的一次调用必须完成两轮，而不是把单轮报告标记成两轮。每轮都按 `收集 → 精读 → 五集合 → 跨论文归纳` 执行，并在进入下一轮前保存阶段产物。
+
+### Round 1：领域地图与共性问题
+
+并行读取已配置的 Notion 文献库、Research Wiki、Zotero/Obsidian/本地 PDF 和外部来源；去重后精读代表性论文。每篇重点论文填写五集合：解决的问题、作者 Intuition、核心方法、方法局限、潜在改进方向。跨论文归纳方法共性、重复失败、矛盾结果和 P0–P4 线索，输出 `idea-stage/LITERATURE_ROUND1.md`。
+
+### Round 2：问题定向检索与证据包
+
+从 Round 1 的 P0–P4 和共性问题中选择值得深挖的问题，围绕每个问题定向搜索至少一组补充论文，重新完成收集、精读和五集合。对已存在的相近工作记录机制条件、已解决部分和剩余限制；相似标题不能直接否决方向。输出 `idea-stage/LITERATURE_ROUND2.md` 和 `idea-stage/PROBLEM_EVIDENCE_PACK.md`。证据包必须标注论文明确内容、跨论文归纳或本文推导，并包含候选 Insight、竞争解释和可区分预测。
+
+P0–P4 只决定追踪优先级：P0 是核心 limitation/失败，P1 是多论文重复问题，P2 是反常/矛盾结果，P3 是未经检验的关键假设，P4 是迁移或规模边界。它们不是正确性评分。
+
+
 ### Per-source/per-paper fan-out
 
 Retrieval and extraction are breadth-bound. Use fresh `spawn_agent` shards when

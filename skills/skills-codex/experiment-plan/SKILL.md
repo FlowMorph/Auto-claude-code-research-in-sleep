@@ -221,6 +221,18 @@ Plan file: refine-logs/EXPERIMENT_PLAN.md
 Tracker file: refine-logs/EXPERIMENT_TRACKER.md
 ```
 
+## ARIS Codex Research Map 与实验分层契约
+
+Phase 0/1 先读取 `PROBLEM_EVIDENCE_PACK`、Insight Card、Proposal、Pilot 诊断和 `research-refine` 的 H/Q/M/B/E。输出的 Research Map 至少包含：
+
+| Q | H | M | B | E | Evidence 类型 | 直接回答的 claim | 预算/退出条件 |
+|---|---|---|---|---|---|---|---|
+| 学术子问题 | 机制假设 | 最小组件 | 可复现构建 | 实验 | Pilot / Diagnostic / Formal | claim | 资源约束 |
+
+实验块分为三类：`Pilot Evidence`（低成本排序，不支持最终 claim）、`Diagnostic/Mechanism`（隔离 M/B/E、区分竞争解释）、`Formal Evaluation`（多 seed、强基线和论文表格）。每个块写清信号如何构造、观测指标如何区分预测、对照、预算、停止条件和失败归因；不把 benchmark 数量当作证据强度。只有大型正式实验才填写 `Formal Infra Plan`，记录 GPU 列表、并行 wave、seed、OOM retry、日志和恢复方式，并沿用 experiment-queue 的调度能力。
+
+在 Pilot 已有可靠信号时复用其数据处理和诊断，不重复无目的运行；Pilot 不自动升级为 Formal claim。
+
 ## Output Protocols
 
 > Follow these shared protocols for all output files:
